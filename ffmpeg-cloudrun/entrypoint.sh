@@ -1,14 +1,19 @@
 #!/bin/bash
 
 function exectime {
-	_START=$1
-	_END=$2
-	_NAME=$3
-	echo "### Execution of ${_NAME} took -> $((_END-_START))"
+	_START="$1"
+	_END="$2"
+	_NAME="$3"
+	start_timestamp=$(date -d "${_START}" +%s%3N)
+	end_timestamp=$(date -d "${_END}" +%s%3N)
+	time_difference=$((end_timestamp - start_timestamp))
+	seconds=$((time_difference / 1000))
+	milliseconds=$((time_difference % 1000))
+	echo "### Execution of ${_NAME} took -> ${seconds},${milliseconds}"
 }
 
-_VERYSTART="$(date +%s)"
-echo "### Start time: $(date)"
+_VERYSTART="$(date "+%F %T,%3N")"
+echo "### Start time: ${_VERYSTART}"
 echo "### Transcoding ${MEDIA}"
 
 _EXTENSION="${MEDIA##*.}"
@@ -17,18 +22,18 @@ _FILENAME="${_BASENAME%.*}"
 
 _DIR=/dev/shm
 
-_PULL_START="$(date +%s)"
+_PULL_START="$(date "+%F %T,%3N")"
 gsutil cp "${SRC}"/"${MEDIA}" "${_DIR}/"
-_PULL_END="$(date +%s)"
+_PULL_END="$(date "+%F %T,%3N")"
 
-_MEDIAINFO_SRC_START="$(date +%s)"
+_MEDIAINFO_SRC_START="$(date "+%F %T,%3N")"
 mediainfo "${_SRC}"/"${MEDIA}"
-_MEDIAINFO_SRC_END="$(date +%s)"
+_MEDIAINFO_SRC_END="$(date "+%F %T,%3N")"
 
 lscpu | grep -q avx512
 [[ $? = 0 ]] && _ASM="avx512" || _ASM="avx2"
 
-_FFMPEG_START="$(date +%s)"
+_FFMPEG_START="$(date "+%F %T,%3N")"
 ffmpeg \
 	-i "${_SRC}"/"${MEDIA}" \
 	-c:v libx264 \
@@ -39,22 +44,22 @@ ffmpeg \
 	-c:a copy \
 	-y \
 	"${_DST}"/"${_FILENAME}-hd.mp4"
-_FFMPEG_END="$(date +%s)"
+_FFMPEG_END="$(date "+%F %T,%3N")"
 
-_MEDIAINFO_DST_START="$(date +%s)"
+_MEDIAINFO_DST_START="$(date "+%F %T,%3N")"
 mediainfo "${_DST}"/"${_FILENAME}-hd.mp4"
-_MEDIAINFO_DST_END="$(date +%s)"
+_MEDIAINFO_DST_END="$(date "+%F %T,%3N")"
 
-_PUSH_START="$(date +%s)"
+_PUSH_START="$(date "+%F %T,%3N")"
 gsutil cp "${_DIR}"/"${_FILENAME}-hd.mp4" "${DST}/"
-_PUSH_END="$(date +%s)"
+_PUSH_END="$(date "+%F %T,%3N")"
 
-exectime ${_PULL_START} ${_PULL_END} "GCS retrieval"
-exectime ${_MEDIAINFO_SRC_START} ${_MEDIAINFO_SRC_END} "original Mediainfo"
-exectime ${_FFMPEG_START} ${_FFMPEG_END} "FFMpeg transcoding"
-exectime ${_MEDIAINFO_DST_START} ${_MEDIAINFO_DST_END} "transcoded Mediainfo"
-exectime ${_PUSH_START} ${_PUSH_END} "GCS upload"
-_VERYEND="$(date +%s)"
+exectime "${_PULL_START}" "${_PULL_END}" "GCS retrieval"
+exectime "${_MEDIAINFO_SRC_START}" "${_MEDIAINFO_SRC_END}" "original Mediainfo"
+exectime "${_FFMPEG_START}" "${_FFMPEG_END}" "FFMpeg transcoding"
+exectime "${_MEDIAINFO_DST_START}" "${_MEDIAINFO_DST_END}" "transcoded Mediainfo"
+exectime "${_PUSH_START}" "${_PUSH_END}" "GCS upload"
+_VERYEND="$(date "+%F %T,%3N")"
 
-exectime ${_VERYSTART} ${_VERYEND} "the entire process"
-echo "### Ending at: $(date)"
+exectime "${_VERYSTART}" "${_VERYEND}" "the entire process"
+echo "### Ending at: $(date "+%F %T,%3N")"
