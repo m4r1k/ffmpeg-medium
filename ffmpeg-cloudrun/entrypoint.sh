@@ -40,7 +40,7 @@ ffmpeg \
 	-filter:v scale="720:trunc(ow/a/2)*2" \
 	-preset:v medium \
 	-x264-params "keyint=120:min-keyint=120:sliced-threads=0:scenecut=0:asm=${_ASM}" \
-	-tune psnr -profile:v high -b:v 6M -maxrate 12M -bufsize 24M -r 60 \
+	-tune psnr -profile:v high -b:v 6M -maxrate 12M -bufsize 24M \
 	-c:a copy \
 	-y \
 	"${_DST}"/"${_FILENAME}-hd.mp4"
